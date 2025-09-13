@@ -3,13 +3,14 @@
   "type": "module",
   "version": "0.0.0",
   "packageManager": "pnpm@10.16.0",
-  "description": "",
+  "description": "Reactivity analyzer for signal-based library",
   "author": "KazariEX",
   "license": "MIT",
   "repository": "KazariEX/reactivity-analyzer",
-  "keywords": [],
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./rules/vue": "./dist/rules/vue.js",
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -30,6 +31,7 @@
     "bumpp": "catalog:",
     "eslint": "catalog:",
     "tsdown": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }
