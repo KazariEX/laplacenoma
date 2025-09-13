@@ -1,0 +1,35 @@
+{
+  "name": "reactivity-analyzer",
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.16.0",
+  "description": "",
+  "author": "KazariEX",
+  "license": "MIT",
+  "repository": "KazariEX/reactivity-analyzer",
+  "keywords": [],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown -w",
+    "prepack": "pnpm run build",
+    "release": "bumpp --no-push -c \"release: v%s\"",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@zinkawaii/eslint-config": "catalog:",
+    "@zinkawaii/tsconfig": "catalog:",
+    "bumpp": "catalog:",
+    "eslint": "catalog:",
+    "tsdown": "catalog:",
+    "vitest": "catalog:"
+  }
+}
