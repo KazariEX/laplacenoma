@@ -3,71 +3,89 @@ import { defineRules } from "../index";
 export default defineRules([
     {
         name: /^(?:ref|customRef|shallowRef|toRef|useTemplateRef|defineModel)$/,
-        binding: {
-            accessTypes: [
-                ".value",
-            ],
+        resolve({ binding, typescript: ts, match }) {
+            if (binding && ts.isIdentifier(binding)) {
+                match("signal", binding, {
+                    accessTypes: [
+                        ".value",
+                    ],
+                });
+            }
         },
     },
     {
         name: /^(?:reactive|shallowReactive|defineProps|withDefaults)$/,
-        binding: {
-            accessTypes: [
-                ".*",
-            ],
+        resolve({ binding, typescript: ts, match }) {
+            if (binding && ts.isIdentifier(binding)) {
+                match("signal", binding, {
+                    accessTypes: [
+                        ".*",
+                    ],
+                });
+            }
         },
     },
     {
         name: "toRefs",
-        bindings: {
-            $any: {
-                accessTypes: [
-                    ".value",
-                ],
-            },
+        resolve({ binding, typescript: ts, match }) {
+            if (binding && ts.isObjectBindingPattern(binding)) {
+                for (const element of binding.elements) {
+                    if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+                        match("signal", element, {
+                            accessTypes: [
+                                ".value",
+                            ],
+                        });
+                    }
+                }
+            }
         },
     },
     {
         name: "computed",
-        binding: {
-            accessTypes: [
-                ".value",
-            ],
+        resolve({ binding, expression, typescript: ts, match }) {
+            if (binding && ts.isIdentifier(binding)) {
+                match("signal", binding, {
+                    accessTypes: [
+                        ".value",
+                    ],
+                });
+            }
+            if (expression.arguments.length) {
+                const arg0 = expression.arguments[0];
+                if (ts.isObjectLiteralExpression(arg0)) {
+                    const getProp = arg0.properties.find(
+                        (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "get",
+                    );
+                    if (getProp && ts.isPropertyAssignment(getProp)) {
+                        match("effect", getProp.initializer);
+                    }
+                }
+                else {
+                    match("effect", arg0);
+                }
+            }
         },
-        arguments: [
-            {
-                $or: [
-                    {
-                        $properties: {
-                            get: {
-                                type: "effect",
-                            },
-                        },
-                    },
-                    {
-                        type: "effect",
-                    },
-                ],
-            },
-        ],
     },
     {
         name: /^(?:effect|watchEffect)$/,
-        arguments: [
-            {
-                type: "effect",
-            },
-        ],
+        resolve: ({ expression, match }) => {
+            if (expression.arguments.length) {
+                const arg0 = expression.arguments[0];
+                match("effect", arg0);
+            }
+        },
     },
     {
         name: "watch",
-        arguments: [
-            {
-                type: "accessor",
-            },
-            {
-                type: "callback",
-            },
-        ],
+        resolve: ({ expression, match }) => {
+            const [arg0, arg1] = expression.arguments;
+            if (arg0) {
+                match("accessor", arg0);
+            }
+            if (arg1) {
+                match("callback", arg1);
+            }
+        },
     },
 ]);

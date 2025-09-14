@@ -1,22 +1,22 @@
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { analyze } from "../../src/analyze";
+import { collectSignals } from "../../src/analyze/collectSignals";
 import rulesVue from "../../src/rules/vue";
-import type { CreateAnalyzerOptions } from "../../src";
+import type { AnalyzeOptions } from "../../src/analyze";
 
 describe("rules/vue", () => {
-    const options: CreateAnalyzerOptions = {
+    const options: AnalyzeOptions = {
         typescript: ts,
         rules: rulesVue,
     };
 
-    function analyzeText(text: string) {
+    function collect(text: string) {
         const sourceFile = ts.createSourceFile("vue.ts", text, ts.ScriptTarget.ESNext);
-        return analyze(options, sourceFile);
+        return collectSignals(options, sourceFile);
     }
 
     it("ref", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             const count = ref(0);
         `);
 
@@ -37,7 +37,7 @@ describe("rules/vue", () => {
     });
 
     it("reactive", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             const state = reactive({ count: 0 });
         `);
 
@@ -58,7 +58,7 @@ describe("rules/vue", () => {
     });
 
     it("toRefs", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             const { count, name } = toRefs(state);
         `);
 
@@ -89,7 +89,7 @@ describe("rules/vue", () => {
     });
 
     it("computed", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             const doubleCount = computed(() => count.value * 2);
         `);
 
@@ -120,7 +120,7 @@ describe("rules/vue", () => {
     });
 
     it("computed w/ get()", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             const doubleCount = computed({
                 get: () => count.value * 2,
                 set: (val) => (count.value = val / 2),
@@ -154,7 +154,7 @@ describe("rules/vue", () => {
     });
 
     it("watchEffect", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             watchEffect(() => {
                 console.log(count.value);
             });
@@ -179,7 +179,7 @@ describe("rules/vue", () => {
     });
 
     it("watch", () => {
-        const signals = analyzeText(`
+        const signals = collect(`
             watch(count, (newVal, oldVal) => {
                 console.log({ newVal, oldVal });
             });

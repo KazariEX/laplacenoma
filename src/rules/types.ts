@@ -1,33 +1,24 @@
+import type ts from "typescript";
+
 export interface Rule {
     name: string | RegExp;
-    binding?: BindingSchema;
-    bindings?: ArraySchema<BindingElementSchema>;
-    arguments?: ArraySchema<ArgumentSchema>;
+    resolve: (context: ResolveContext) => void;
 }
 
-export type GenericSchema<T extends object> = T | {
-    $or: GenericSchema<T>[];
-} | {
-    $properties: Record<string, GenericSchema<T>>;
-};
+export interface ResolveContext {
+    binding: ts.BindingName | undefined;
+    expression: ts.CallExpression;
+    typescript: typeof ts;
+    match: {
+        (type: "signal", node: ts.Node, schema: SignalSchema): void;
+        (type: TriggerType, node: ts.Node): void;
+    };
+}
 
-export type ArraySchema<T extends object> = T[] | {
-    $any: SchemaRaw<T>;
-};
+export type AccessType = `.${string}` | "()" | `.${string}()`;
 
-export type AccessTypeSchema = `.${string}` | "()" | `.${string}()`;
+export interface SignalSchema {
+    accessTypes: AccessType[];
+}
 
-export type BindingSchema = GenericSchema<{
-    accessTypes: AccessTypeSchema[];
-}>;
-
-export type BindingElementSchema = GenericSchema<{
-    name?: string | RegExp;
-    accessTypes: AccessTypeSchema[];
-}>;
-
-export type ArgumentSchema = GenericSchema<{
-    type: "accessor" | "callback" | "effect";
-}>;
-
-export type SchemaRaw<T> = T extends GenericSchema<infer U> ? U : never;
+export type TriggerType = "accessor" | "callback" | "effect";

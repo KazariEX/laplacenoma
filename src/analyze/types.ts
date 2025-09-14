@@ -1,5 +1,5 @@
 import type ts from "typescript";
-import type { AccessTypeSchema } from "./rules/types";
+import type { AccessType } from "../rules/types";
 
 export interface TextRange {
     start: number;
@@ -14,7 +14,7 @@ export interface ReactiveNode {
     isDependency?: boolean;
     isDependent?: boolean;
     binding?: TSNode & {
-        accessTypes: AccessTypeSchema[];
+        accessTypes: AccessType[];
     };
     accessor?: TSNode & {
         requireAccess?: boolean;
