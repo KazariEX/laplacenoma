@@ -1,12 +1,12 @@
 {
-  "name": "reactivity-analyzer",
+  "name": "laplacenoma",
   "type": "module",
   "version": "0.0.0",
   "packageManager": "pnpm@10.16.0",
   "description": "Reactivity analyzer for signal-based library",
   "author": "KazariEX",
   "license": "MIT",
-  "repository": "KazariEX/reactivity-analyzer",
+  "repository": "KazariEX/laplacenoma",
   "exports": {
     ".": "./dist/index.js",
     "./rules/vue": "./dist/rules/vue.js",
