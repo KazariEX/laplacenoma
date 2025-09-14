@@ -1,4 +1,5 @@
 import type ts from "typescript";
+import { collectAccesses } from "./collectAccesses";
 import { collectSignals } from "./collectSignals";
 import type { Rule } from "../rules/types";
 import type { TextRange } from "./types";
@@ -17,5 +18,6 @@ export function analyze(
 ) {
     return {
         signals: collectSignals(options, sourceFile),
+        ...collectAccesses(options, sourceFile),
     };
 }
