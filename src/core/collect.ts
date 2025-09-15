@@ -1,14 +1,27 @@
 import type ts from "typescript";
-import { defaultToSourceRange } from "../utils";
 import type { Rule, SignalSchema, TriggerType } from "../rules/types";
-import type { AnalyzeOptions } from "./index";
+import type { CollectOptions } from "./index";
 import type { ReactiveNode } from "./types";
 
-export function collectSignals(
-    context: AnalyzeOptions,
+export interface CollectContext extends Required<CollectOptions> {
+    rules: Rule[];
+}
+
+export function collect(
+    context: CollectContext,
     sourceFile: ts.SourceFile,
 ) {
-    const { typescript: ts, rules, toSourceRange = defaultToSourceRange } = context;
+    return {
+        signals: collectSignals(context, sourceFile),
+        ...collectAccesses(context, sourceFile),
+    };
+}
+
+export function collectSignals(
+    context: CollectContext,
+    sourceFile: ts.SourceFile,
+) {
+    const { typescript: ts, rules, toSourceRange } = context;
 
     const signals: ReactiveNode[] = [];
     const resolved = new Set<ts.Node>();
@@ -30,7 +43,7 @@ export function collectSignals(
                     }
                 }
                 else if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) {
-                    const signal = createFunctionSignal(name, initializer.body, sourceFile);
+                    const signal = createFunctionSignal(name, initializer.body);
                     if (signal) {
                         signals.push(signal);
                     }
@@ -46,7 +59,7 @@ export function collectSignals(
             }
         }
         else if (ts.isFunctionDeclaration(node) && node.name && node.body) {
-            const signal = createFunctionSignal(node.name, node.body, sourceFile);
+            const signal = createFunctionSignal(node.name, node.body);
             if (signal) {
                 signals.push(signal);
             }
@@ -89,7 +102,7 @@ export function collectSignals(
                 ast = node.body;
                 requireAccess = true;
             }
-            const bodyNode = createTsNode(ast, sourceFile);
+            const bodyNode = createTsNode(ast);
             if (!bodyNode) {
                 continue;
             }
@@ -109,7 +122,7 @@ export function collectSignals(
 
         if (signalMatches.length) {
             for (const [schema, node] of signalMatches) {
-                const bindingNode = createTsNode(node, sourceFile);
+                const bindingNode = createTsNode(node);
                 if (!bindingNode) {
                     continue;
                 }
@@ -132,10 +145,9 @@ export function collectSignals(
     function createFunctionSignal(
         name: ts.BindingName,
         body: ts.Block | ts.Expression,
-        sourceFile: ts.SourceFile,
     ): ReactiveNode | undefined {
-        const nameNode = createTsNode(name, sourceFile);
-        const bodyNode = createTsNode(body, sourceFile);
+        const nameNode = createTsNode(name);
+        const bodyNode = createTsNode(body);
         if (nameNode && bodyNode) {
             return {
                 binding: {
@@ -151,14 +163,66 @@ export function collectSignals(
         }
     }
 
-    function createTsNode(
-        node: ts.Node,
-        sourceFile: ts.SourceFile,
-    ) {
+    function createTsNode(node: ts.Node) {
         const range = toSourceRange(node.getStart(sourceFile), node.end);
         if (range) {
             return { ...range, ast: node };
         }
+    }
+}
+
+export function collectAccesses(
+    context: CollectContext,
+    sourceFile: ts.SourceFile,
+) {
+    const { typescript: ts, toSourceRange } = context;
+
+    const propertyAccesses = new Map<number, string>();
+    const propertyCalls = new Map<number, string>();
+    const functionCalls = new Set<number>();
+    visit(sourceFile);
+
+    return {
+        propertyAccesses,
+        propertyCalls,
+        functionCalls,
+    };
+
+    function visit(node: ts.Node) {
+        if (ts.isPropertyAccessExpression(node)) {
+            const range = toSourceRange(node.expression.getStart(sourceFile), node.expression.end);
+            if (range) {
+                propertyAccesses.set(range.end, node.name.text);
+            }
+        }
+        else if (ts.isElementAccessExpression(node)) {
+            const range = toSourceRange(node.expression.getStart(sourceFile), node.expression.end);
+            if (range) {
+                const text = ts.isStringLiteralLike(node.argumentExpression)
+                    ? node.argumentExpression.text
+                    : "*";
+                propertyAccesses.set(range.end, text);
+            }
+        }
+        else if (ts.isCallExpression(node)) {
+            const { expression } = node;
+            if (ts.isPropertyAccessExpression(expression)) {
+                const range = toSourceRange(
+                    expression.expression.getStart(sourceFile),
+                    expression.expression.end,
+                );
+                if (range) {
+                    propertyCalls.set(range.end, expression.name.text);
+                }
+            }
+            else if (ts.isIdentifier(expression)) {
+                const range = toSourceRange(expression.getStart(sourceFile), expression.end);
+                if (range) {
+                    functionCalls.add(range.end);
+                }
+            }
+        }
+        node.forEachChild(visit);
     }
 }
 

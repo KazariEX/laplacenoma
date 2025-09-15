@@ -1,18 +1,19 @@
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { collectSignals } from "../../src/analyze/collectSignals";
+import { type CollectContext, collectSignals } from "../../src/core/collect";
+import { defaultToSourceRange } from "../../src/core/utils";
 import rulesVue from "../../src/rules/vue";
-import type { AnalyzeOptions } from "../../src/analyze";
 
 describe("rules/vue", () => {
-    const options: AnalyzeOptions = {
+    const context: CollectContext = {
         typescript: ts,
         rules: rulesVue,
+        toSourceRange: defaultToSourceRange,
     };
 
     function collect(text: string) {
         const sourceFile = ts.createSourceFile("vue.ts", text, ts.ScriptTarget.ESNext);
-        return collectSignals(options, sourceFile);
+        return collectSignals(context, sourceFile);
     }
 
     it("ref", () => {
@@ -28,7 +29,7 @@ describe("rules/vue", () => {
                   ".value",
                 ],
                 "end": 24,
-                "start": 19,
+                "pos": 19,
               },
               "isDependency": true,
             },
@@ -49,7 +50,7 @@ describe("rules/vue", () => {
                   ".*",
                 ],
                 "end": 24,
-                "start": 19,
+                "pos": 19,
               },
               "isDependency": true,
             },
@@ -70,7 +71,7 @@ describe("rules/vue", () => {
                   ".value",
                 ],
                 "end": 26,
-                "start": 21,
+                "pos": 21,
               },
               "isDependency": true,
             },
@@ -80,7 +81,7 @@ describe("rules/vue", () => {
                   ".value",
                 ],
                 "end": 32,
-                "start": 28,
+                "pos": 28,
               },
               "isDependency": true,
             },
@@ -98,19 +99,19 @@ describe("rules/vue", () => {
             {
               "accessor": {
                 "end": 63,
+                "pos": 48,
                 "requireAccess": true,
-                "start": 48,
               },
               "binding": {
                 "accessTypes": [
                   ".value",
                 ],
                 "end": 30,
-                "start": 19,
+                "pos": 19,
               },
               "callback": {
                 "end": 63,
-                "start": 48,
+                "pos": 48,
               },
               "isDependency": true,
               "isDependent": true,
@@ -132,19 +133,19 @@ describe("rules/vue", () => {
             {
               "accessor": {
                 "end": 86,
+                "pos": 71,
                 "requireAccess": true,
-                "start": 71,
               },
               "binding": {
                 "accessTypes": [
                   ".value",
                 ],
                 "end": 30,
-                "start": 19,
+                "pos": 19,
               },
               "callback": {
                 "end": 86,
-                "start": 71,
+                "pos": 71,
               },
               "isDependency": true,
               "isDependent": true,
@@ -165,12 +166,12 @@ describe("rules/vue", () => {
             {
               "accessor": {
                 "end": 88,
+                "pos": 31,
                 "requireAccess": true,
-                "start": 31,
               },
               "callback": {
                 "end": 88,
-                "start": 31,
+                "pos": 31,
               },
               "isDependent": true,
             },
@@ -190,12 +191,12 @@ describe("rules/vue", () => {
             {
               "accessor": {
                 "end": 24,
+                "pos": 19,
                 "requireAccess": false,
-                "start": 19,
               },
               "callback": {
                 "end": 110,
-                "start": 46,
+                "pos": 46,
               },
               "isDependent": true,
             },

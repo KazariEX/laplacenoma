@@ -1,12 +1,7 @@
 import type ts from "typescript";
 import type { AccessType } from "../rules/types";
 
-export interface TextRange {
-    start: number;
-    end: number;
-}
-
-export interface TSNode extends TextRange {
+export interface TSNode extends ts.TextRange {
     ast: ts.Node;
 }
 
@@ -20,4 +15,8 @@ export interface ReactiveNode {
         requireAccess?: boolean;
     };
     callback?: TSNode;
+}
+
+export interface ToSourceRange {
+    (pos: number, end: number): ts.TextRange | undefined;
 }
