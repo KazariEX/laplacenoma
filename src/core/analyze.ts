@@ -170,7 +170,7 @@ export function analyze(sourceFile: ts.SourceFile, position: number, context: An
                 if (childNode) {
                     visit(
                         childNode,
-                        requireAccess,
+                        ts.isFunctionExpression(node.ast) || ts.isArrowFunction(node.ast) || requireAccess,
                         ts.isPropertyAccessExpression(node.ast) || ts.isElementAccessExpression(node.ast),
                     );
                 }
