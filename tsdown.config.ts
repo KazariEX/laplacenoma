@@ -5,5 +5,9 @@ export default defineConfig({
         index: "./src/index.ts",
         "rules/vue": "./src/rules/vue/index.ts",
     },
+    format: [
+        "cjs",
+        "esm",
+    ],
     exports: true,
 });

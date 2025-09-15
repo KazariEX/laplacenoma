@@ -8,13 +8,19 @@
   "license": "MIT",
   "repository": "KazariEX/laplacenoma",
   "exports": {
-    ".": "./dist/index.js",
-    "./rules/vue": "./dist/rules/vue.js",
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./rules/vue": {
+      "import": "./dist/rules/vue.js",
+      "require": "./dist/rules/vue.cjs"
+    },
     "./package.json": "./package.json"
   },
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.cts",
   "files": [
     "dist"
   ],
