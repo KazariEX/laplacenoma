@@ -26,7 +26,7 @@ export default defineRules([
         },
     },
     {
-        name: "toRefs",
+        name: /^(?:toRefs|storeToRefs)$/,
         resolve({ binding, typescript: ts, match }) {
             if (binding && ts.isObjectBindingPattern(binding)) {
                 for (const element of binding.elements) {
@@ -69,7 +69,7 @@ export default defineRules([
     },
     {
         name: /^(?:effect|watchEffect)$/,
-        resolve: ({ expression, match }) => {
+        resolve({ expression, match }) {
             if (expression.arguments.length) {
                 const arg0 = expression.arguments[0];
                 match("effect", arg0);
@@ -78,13 +78,39 @@ export default defineRules([
     },
     {
         name: "watch",
-        resolve: ({ expression, match }) => {
+        resolve({ expression, match }) {
             const [arg0, arg1] = expression.arguments;
             if (arg0) {
                 match("accessor", arg0);
             }
             if (arg1) {
                 match("callback", arg1);
+            }
+        },
+    },
+    {
+        name: /^use[A-Z].*$/,
+        resolve({ binding, typescript: ts, match }) {
+            if (!binding) {
+                return;
+            }
+            if (ts.isIdentifier(binding)) {
+                match("signal", binding, {
+                    accessTypes: [
+                        ".*",
+                    ],
+                });
+            }
+            else if (ts.isObjectBindingPattern(binding) || ts.isArrayBindingPattern(binding)) {
+                for (const element of binding.elements) {
+                    if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+                        match("signal", element, {
+                            accessTypes: [
+                                ".value",
+                            ],
+                        });
+                    }
+                }
             }
         },
     },
