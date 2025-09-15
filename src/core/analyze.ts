@@ -85,12 +85,6 @@ export function analyze(sourceFile: ts.SourceFile, position: number, context: An
         if (signal.accessor) {
             const { requireAccess } = signal.accessor;
             visit(signal.accessor, requireAccess);
-            signal.accessor.ast.forEachChild((child) => {
-                const childNode = createTsNode(child);
-                if (childNode) {
-                    visit(childNode, requireAccess);
-                }
-            });
         }
 
         if (!hasDependency) {
