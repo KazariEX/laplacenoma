@@ -69,8 +69,8 @@ export function analyze(sourceFile: ts.SourceFile, position: number, context: An
     }
 
     return {
-        dependencies,
-        dependents,
+        dependencyRanges,
+        dependentRanges,
     };
 
     function findDependencies(signal: ReactiveNode, visited = new Set<ReactiveNode>()) {

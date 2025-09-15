@@ -1,6 +1,7 @@
 shamefullyHoist: true
 
 catalog:
+  "@types/node": ^24.4.0
   "@zinkawaii/eslint-config": ^0.4.1
   "@zinkawaii/tsconfig": ^0.0.2
   bumpp: ^10.2.3
