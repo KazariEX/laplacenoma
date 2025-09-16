@@ -80,9 +80,7 @@ function resolveBinding(
 ) {
     const { binding, typescript: ts, match } = context;
     if (binding && ts.isIdentifier(binding)) {
-        match("signal", binding, {
-            accessTypes,
-        });
+        match("signal", binding, accessTypes);
     }
 }
 
@@ -94,9 +92,7 @@ function resolveBindingElements(
     if (binding && ts.isObjectBindingPattern(binding)) {
         for (const element of binding.elements) {
             if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
-                match("signal", element, {
-                    accessTypes,
-                });
+                match("signal", element, accessTypes);
             }
         }
     }

@@ -1,5 +1,5 @@
 import type ts from "typescript";
-import type { Rule, SignalSchema, TriggerType } from "../rules/types";
+import type { AccessType, Rule, TriggerType } from "../rules/types";
 import type { CollectOptions } from "./index";
 import type { ReactiveNode } from "./types";
 
@@ -72,8 +72,8 @@ export function collectSignals(
         expression: ts.CallExpression,
         binding?: ts.BindingName,
     ) {
-        const signalMatches: [schema: SignalSchema, node: ts.Node][] = [];
-        const triggerMatches: [type: TriggerType, node: ts.Node][] = [];
+        const signalMatches: [node: ts.Node, accessTypes: AccessType[]][] = [];
+        const triggerMatches: [node: ts.Node, type: TriggerType][] = [];
 
         const name = (expression.expression as ts.Identifier).text;
         if (!isNameMatch(rule.name, name)) {
@@ -84,18 +84,18 @@ export function collectSignals(
             binding,
             expression,
             typescript: ts,
-            match(type, node, schema?) {
-                if (type === "signal" && schema) {
-                    signalMatches.push([schema as SignalSchema, node]);
+            match(type, node, data?) {
+                if (type === "signal" && data) {
+                    signalMatches.push([node, data as AccessType[]]);
                 }
                 else {
-                    triggerMatches.push([type as TriggerType, node]);
+                    triggerMatches.push([node, type as TriggerType]);
                 }
             },
         });
 
         const signal: ReactiveNode = {};
-        for (const [type, node] of triggerMatches) {
+        for (const [node, type] of triggerMatches) {
             let ast = node;
             let requireAccess = false;
             if (ts.isFunctionLike(node) && "body" in node && node.body) {
@@ -121,7 +121,7 @@ export function collectSignals(
         }
 
         if (signalMatches.length) {
-            for (const [schema, node] of signalMatches) {
+            for (const [node, accessTypes] of signalMatches) {
                 const bindingNode = createTsNode(node);
                 if (!bindingNode) {
                     continue;
@@ -130,7 +130,7 @@ export function collectSignals(
                 cosignal.isDependency = true;
                 cosignal.binding = {
                     ...bindingNode,
-                    accessTypes: schema.accessTypes,
+                    accessTypes,
                 };
                 signals.push(cosignal);
             }

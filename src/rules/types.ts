@@ -10,15 +10,11 @@ export interface ResolveContext {
     expression: ts.CallExpression;
     typescript: typeof ts;
     match: {
-        (type: "signal", node: ts.Node, schema: SignalSchema): void;
+        (type: "signal", node: ts.Node, accessTypes: AccessType[]): void;
         (type: TriggerType, node: ts.Node): void;
     };
 }
 
 export type AccessType = `.${string}` | "()" | `.${string}()`;
-
-export interface SignalSchema {
-    accessTypes: AccessType[];
-}
 
 export type TriggerType = "accessor" | "callback" | "effect";
