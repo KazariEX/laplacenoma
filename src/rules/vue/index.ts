@@ -101,11 +101,19 @@ function resolveBindingElements(
 function resolveComputedGetter(context: ResolveContext, node: ts.Expression) {
     const { typescript: ts, match } = context;
     if (ts.isObjectLiteralExpression(node)) {
-        const getProp = node.properties.find(
-            (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "get",
-        );
-        if (getProp && ts.isPropertyAssignment(getProp)) {
-            match("effect", getProp.initializer);
+        for (const prop of node.properties) {
+            if (ts.isPropertyAssignment(prop)) {
+                if (ts.isIdentifier(prop.name) && prop.name.text === "get") {
+                    match("effect", prop.initializer);
+                    break;
+                }
+            }
+            else if (ts.isMethodDeclaration(prop)) {
+                if (ts.isIdentifier(prop.name) && prop.name.text === "get") {
+                    match("effect", prop);
+                    break;
+                }
+            }
         }
     }
     else {
