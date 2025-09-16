@@ -1,83 +1,60 @@
+import type ts from "typescript";
 import { defineRules } from "../index";
+import type { AccessType, ResolveContext } from "../types";
 
 export default defineRules([
     {
-        name: /^(?:ref|customRef|shallowRef|toRef|useTemplateRef|defineModel)$/,
-        resolve({ binding, typescript: ts, match }) {
-            if (binding && ts.isIdentifier(binding)) {
-                match("signal", binding, {
-                    accessTypes: [
-                        ".value",
-                    ],
-                });
-            }
+        name: /^(?:ref(?:[A-Z].*)?|createRef|customRef|extendRef|shallowRef|toRef|useTemplateRef|defineModel)$/,
+        resolve(context) {
+            resolveBinding(context, [".value"]);
         },
     },
     {
-        name: /^(?:reactive|shallowReactive|defineProps|withDefaults)$/,
-        resolve({ binding, typescript: ts, match }) {
-            if (binding && ts.isIdentifier(binding)) {
-                match("signal", binding, {
-                    accessTypes: [
-                        ".*",
-                    ],
-                });
-            }
+        name: /^(?:reactive(?:[A-Z].*)?|shallowReactive|toReactive|defineProps|withDefaults)$/,
+        resolve(context) {
+            resolveBinding(context, [".*"]);
         },
     },
     {
         name: /^(?:toRefs|storeToRefs)$/,
-        resolve({ binding, typescript: ts, match }) {
-            if (binding && ts.isObjectBindingPattern(binding)) {
-                for (const element of binding.elements) {
-                    if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
-                        match("signal", element, {
-                            accessTypes: [
-                                ".value",
-                            ],
-                        });
-                    }
-                }
+        resolve(context) {
+            resolveBindingElements(context, [".value"]);
+        },
+    },
+    {
+        name: "computedWithControl",
+        resolve(context) {
+            resolveBinding(context, [".value"]);
+            const [arg0, arg1] = context.expression.arguments;
+            if (arg0) {
+                context.match("accessor", arg0);
+            }
+            if (arg1) {
+                resolveComputedGetter(context, arg1);
             }
         },
     },
     {
-        name: "computed",
-        resolve({ binding, expression, typescript: ts, match }) {
-            if (binding && ts.isIdentifier(binding)) {
-                match("signal", binding, {
-                    accessTypes: [
-                        ".value",
-                    ],
-                });
-            }
-            if (expression.arguments.length) {
-                const arg0 = expression.arguments[0];
-                if (ts.isObjectLiteralExpression(arg0)) {
-                    const getProp = arg0.properties.find(
-                        (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "get",
-                    );
-                    if (getProp && ts.isPropertyAssignment(getProp)) {
-                        match("effect", getProp.initializer);
-                    }
-                }
-                else {
-                    match("effect", arg0);
-                }
+        name: /^computed(?:[A-Z].*)?$/,
+        resolve(context) {
+            resolveBinding(context, [".value"]);
+            const [arg0] = context.expression.arguments;
+            if (arg0) {
+                resolveComputedGetter(context, arg0);
             }
         },
     },
     {
         name: /^(?:effect|watchEffect)$/,
         resolve({ expression, match }) {
-            if (expression.arguments.length) {
-                const arg0 = expression.arguments[0];
+            const [arg0] = expression.arguments;
+            if (arg0) {
                 match("effect", arg0);
             }
         },
     },
     {
-        name: "watch",
+        name: /^(?:watch(?:[A-Z].*)?|whenever)$/,
         resolve({ expression, match }) {
             const [arg0, arg1] = expression.arguments;
             if (arg0) {
@@ -90,28 +67,52 @@ export default defineRules([
     },
     {
         name: /^use[A-Z].*$/,
-        resolve({ binding, typescript: ts, match }) {
-            if (!binding) {
-                return;
-            }
-            if (ts.isIdentifier(binding)) {
-                match("signal", binding, {
-                    accessTypes: [
-                        ".*",
-                    ],
-                });
-            }
-            else if (ts.isObjectBindingPattern(binding) || ts.isArrayBindingPattern(binding)) {
-                for (const element of binding.elements) {
-                    if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
-                        match("signal", element, {
-                            accessTypes: [
-                                ".value",
-                            ],
-                        });
-                    }
-                }
-            }
+        resolve(context) {
+            resolveBinding(context, [".*"]);
+            resolveBindingElements(context, [".value"]);
         },
     },
 ]);
+
+function resolveBinding(
+    context: ResolveContext,
+    accessTypes: AccessType[],
+) {
+    const { binding, typescript: ts, match } = context;
+    if (binding && ts.isIdentifier(binding)) {
+        match("signal", binding, {
+            accessTypes,
+        });
+    }
+}
+
+function resolveBindingElements(
+    context: ResolveContext,
+    accessTypes: AccessType[],
+) {
+    const { binding, typescript: ts, match } = context;
+    if (binding && ts.isObjectBindingPattern(binding)) {
+        for (const element of binding.elements) {
+            if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+                match("signal", element, {
+                    accessTypes,
+                });
+            }
+        }
+    }
+}
+
+function resolveComputedGetter(context: ResolveContext, node: ts.Expression) {
+    const { typescript: ts, match } = context;
+    if (ts.isObjectLiteralExpression(node)) {
+        const getProp = node.properties.find(
+            (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "get",
+        );
+        if (getProp && ts.isPropertyAssignment(getProp)) {
+            match("effect", getProp.initializer);
+        }
+    }
+    else {
+        match("effect", node);
+    }
+}
